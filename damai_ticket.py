@@ -8,6 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver import ActionChains
+from selenium.webdriver.edge.options import Options
 
 class Concert(object):
     def __init__(self, date, session, price, need_real_name, real_name, nick_name, ticket_num, damai_url, target_url, driver_path):
@@ -39,8 +40,17 @@ class Concert(object):
     # 获取账号的cookie信息
     def get_cookie(self):
         self.driver.get(self.damai_url)
+        wait = WebDriverWait(driver, 10)
+        iframe = wait.until(EC.frame_to_be_available_and_switch_to_it((By.XPATH, "//iframe[contains(@src, 'webexp')]")))
+
+        # 找到关闭按钮并点击
+        close_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@title='关闭']")))
+        close_button.click()
+
+        # 切回到默认内容
+        driver.switch_to.default_content()
         print(u"###请点击登录###")
-        self.driver.find_element_by_class_name('login-user').click()
+        self.driver.find_element(By.XPATH, '//span[@class="span-box-header span-user" and @data-spm="dlogin"]').click()
         while self.driver.title.find('大麦网-全球演出赛事官方购票平台') != -1:  # 等待网页加载完成
             sleep(1)
         print(u"###请扫码登录###")
@@ -73,15 +83,18 @@ class Concert(object):
         WebDriverWait(self.driver, 10, 0.1).until(EC.title_contains('大麦网'))
         self.set_cookie()
 
-    def enter_concert(self):
+    def enter_damai_homepage(self):
         print(u'###打开浏览器，进入大麦网###')
+        edge_options = self.setup_edge_options()
+
         if not exists('cookies.pkl'):  # 如果不存在cookie.pkl,就获取一下
-            self.driver = webdriver.Chrome(executable_path=self.driver_path)
+            print(self.driver_path)
+            self.driver = webdriver.Edge(executable_path = self.driver_path, options = edge_options)
             self.get_cookie()
             print(u'###成功获取Cookie，重启浏览器###')
             self.driver.quit()
 
-        options = webdriver.ChromeOptions()
+        options = webdriver.EdgeOptions()
         # 禁止图片、js、css加载
         prefs = {"profile.managed_default_content_settings.images": 2,
                  "profile.managed_default_content_settings.javascript": 1,
@@ -89,9 +102,9 @@ class Concert(object):
         options.add_experimental_option("prefs", prefs)
         options.add_argument("--disable-blink-features=AutomationControlled")
         # 更换等待策略为不等待浏览器加载完全就进行下一步操作
-        capa = DesiredCapabilities.CHROME
+        capa = DesiredCapabilities.EDGE
         capa["pageLoadStrategy"] = "none"
-        self.driver = webdriver.Chrome(executable_path=self.driver_path, options=options, desired_capabilities=capa)
+        self.driver = webdriver.Edge(executable_path=self.driver_path, options=options, capabilities=capa)
         # 登录到具体抢购页面
         self.login()
         self.driver.refresh()
@@ -106,6 +119,13 @@ class Concert(object):
             self.status = 0
             self.driver.quit()
             raise Exception(u"***错误：登录失败,请删除cookie后重试***")
+
+    def setup_edge_options(self):
+        edge_options = Options()
+        edge_options.use_chromium = True
+        edge_options.add_argument("--disable-extensions")
+        edge_options.add_argument("--disable-popup-blocking")
+        return edge_options
 
     # 实现购买函数
     def choose_ticket(self):
@@ -284,7 +304,7 @@ if __name__ == '__main__':
             # params: 场次优先级，票价优先级，实名者序号, 用户昵称， 购买票数， 官网网址， 目标网址, 浏览器驱动地址
         con = Concert(config['date'], config['sess'], config['price'], config['need_real_name'], config['real_name'], config['nick_name'],
                       config['ticket_num'], config['damai_url'], config['target_url'], config['driver_path'])
-        con.enter_concert()  # 进入到具体抢购页面
+        con.enter_damai_homepage()  # 进入到具体抢购页面
     except Exception as e:
         print(e)
         exit(1)
