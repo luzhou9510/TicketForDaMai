@@ -14,7 +14,7 @@ from selenium.webdriver.edge.service import Service
 
 class Concert(object):
     def __init__(self, date, session, price, need_real_name, real_name, nick_name, ticket_num, damai_url, target_url,
-                 driver_path):
+                 driver_path, username, password):
         self.date = date  # 日期序号
         self.session = session  # 场次序号优先级
         self.price = price  # 票价序号优先级
@@ -29,6 +29,8 @@ class Concert(object):
         self.target_url = target_url  # 目标购票网址
         self.driver_path = driver_path  # 浏览器驱动地址
         self.driver = None
+        self.account_username = username
+        self.account_pass = password
 
     def isClassPresent(self, item, name, ret=False):
         try:
@@ -48,9 +50,12 @@ class Concert(object):
         self.driver.find_element(By.XPATH, '//span[@class="span-box-header span-user" and @data-spm="dlogin"]').click()
         while self.driver.title.find('大麦网-全球演出赛事官方购票平台') != -1:  # 等待网页加载完成
             sleep(1)
+
         print(u"###请输入密码登录###")
-        while self.driver.title == '大麦登录':  # 等待扫码完成
+        while self.driver.title != '大麦登录':
             sleep(1)
+
+        self.enter_password_login()
         dump(self.driver.get_cookies(), open("cookies.pkl", "wb"))
         print(u"###Cookie保存成功###")
 
@@ -123,6 +128,8 @@ class Concert(object):
         edge_options.add_argument("--disable-extensions")
         edge_options.add_argument("--disable-popup-blocking")
         edge_options.add_argument("--no-first-run")
+        # 禁用个性化推荐体验弹窗
+        edge_options.add_argument("--edge-web-recommendation-settings=default")
         return edge_options
 
     # 实现购买函数
@@ -295,6 +302,23 @@ class Concert(object):
             print(u'###成功提交订单,请手动支付###')
             self.time_end = time()
 
+    def enter_password_login(self):
+        driver = self.driver
+        iframe = driver.find_element(By.ID, 'alibaba-login-box')
+        driver.switch_to.frame(iframe)
+
+        # 等待登录页面加载完成
+        wait = WebDriverWait(driver, 10)
+        username_input = wait.until(EC.presence_of_element_located((By.NAME, 'fm-login-id')))
+        password_input = wait.until(EC.presence_of_element_located((By.NAME, 'fm-login-password')))
+
+        # 输入账号和密码
+        username_input.send_keys(self.account_username)
+        password_input.send_keys(self.account_pass)
+
+        # 查找并点击提交按钮
+        submit_button = wait.until(EC.element_to_be_clickable((By.ID, 'submit-button')))
+        submit_button.click()
 
 if __name__ == '__main__':
     try:
@@ -302,8 +326,8 @@ if __name__ == '__main__':
             config = loads(f.read())
             # params: 场次优先级，票价优先级，实名者序号, 用户昵称， 购买票数， 官网网址， 目标网址, 浏览器驱动地址
         con = Concert(config['date'], config['sess'], config['price'], config['need_real_name'], config['real_name'],
-                      config['nick_name'],
-                      config['ticket_num'], config['damai_url'], config['target_url'], config['driver_path'])
+                      config['nick_name'], config['ticket_num'], config['damai_url'], config['target_url'],
+                      config['driver_path'], config['account_username'], config['account_pass'])
         con.enter_damai_homepage()  # 进入到具体抢购页面
     except Exception as e:
         print(e)
