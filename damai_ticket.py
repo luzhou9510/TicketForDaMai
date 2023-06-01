@@ -9,9 +9,12 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver import ActionChains
 from selenium.webdriver.edge.options import Options
+from selenium.webdriver.edge.service import Service
+
 
 class Concert(object):
-    def __init__(self, date, session, price, need_real_name, real_name, nick_name, ticket_num, damai_url, target_url, driver_path):
+    def __init__(self, date, session, price, need_real_name, real_name, nick_name, ticket_num, damai_url, target_url,
+                 driver_path):
         self.date = date  # 日期序号
         self.session = session  # 场次序号优先级
         self.price = price  # 票价序号优先级
@@ -40,20 +43,12 @@ class Concert(object):
     # 获取账号的cookie信息
     def get_cookie(self):
         self.driver.get(self.damai_url)
-        wait = WebDriverWait(driver, 10)
-        iframe = wait.until(EC.frame_to_be_available_and_switch_to_it((By.XPATH, "//iframe[contains(@src, 'webexp')]")))
 
-        # 找到关闭按钮并点击
-        close_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@title='关闭']")))
-        close_button.click()
-
-        # 切回到默认内容
-        driver.switch_to.default_content()
         print(u"###请点击登录###")
         self.driver.find_element(By.XPATH, '//span[@class="span-box-header span-user" and @data-spm="dlogin"]').click()
         while self.driver.title.find('大麦网-全球演出赛事官方购票平台') != -1:  # 等待网页加载完成
             sleep(1)
-        print(u"###请扫码登录###")
+        print(u"###请输入密码登录###")
         while self.driver.title == '大麦登录':  # 等待扫码完成
             sleep(1)
         dump(self.driver.get_cookies(), open("cookies.pkl", "wb"))
@@ -86,10 +81,12 @@ class Concert(object):
     def enter_damai_homepage(self):
         print(u'###打开浏览器，进入大麦网###')
         edge_options = self.setup_edge_options()
+        edge_service = Service(executable_path=self.driver_path)
 
         if not exists('cookies.pkl'):  # 如果不存在cookie.pkl,就获取一下
             print(self.driver_path)
-            self.driver = webdriver.Edge(executable_path = self.driver_path, options = edge_options)
+            # 创建Edge浏览器实例
+            self.driver = webdriver.Edge(service=edge_service, options=edge_options)
             self.get_cookie()
             print(u'###成功获取Cookie，重启浏览器###')
             self.driver.quit()
@@ -125,6 +122,7 @@ class Concert(object):
         edge_options.use_chromium = True
         edge_options.add_argument("--disable-extensions")
         edge_options.add_argument("--disable-popup-blocking")
+        edge_options.add_argument("--no-first-run")
         return edge_options
 
     # 实现购买函数
@@ -277,11 +275,12 @@ class Concert(object):
                 self.driver.find_element_by_xpath('/html/body/div[3]/div[2]/div/div[9]/button').click()
 
             iframe = WebDriverWait(self.driver, 20).until(
-                        EC.presence_of_element_located((By.XPATH, '/html/body/div[8]/div[2]/iframe')))
+                EC.presence_of_element_located((By.XPATH, '/html/body/div[8]/div[2]/iframe')))
             self.driver.switch_to_frame(iframe)
             print(u"###开始滑块###")
             sleep(5)
-            snap = self.driver.find_element_by_xpath('/html/body/div/div[2]/div/div[1]/div[2]/center/div[1]/div/div/div/span')
+            snap = self.driver.find_element_by_xpath(
+                '/html/body/div/div[2]/div/div[1]/div[2]/center/div[1]/div/div/div/span')
             actionChains = ActionChains(self.driver)
             actionChains.drag_and_drop_by_offset(snap, 500, 0).perform()
 
@@ -302,7 +301,8 @@ if __name__ == '__main__':
         with open('./config.json', 'r', encoding='utf-8') as f:
             config = loads(f.read())
             # params: 场次优先级，票价优先级，实名者序号, 用户昵称， 购买票数， 官网网址， 目标网址, 浏览器驱动地址
-        con = Concert(config['date'], config['sess'], config['price'], config['need_real_name'], config['real_name'], config['nick_name'],
+        con = Concert(config['date'], config['sess'], config['price'], config['need_real_name'], config['real_name'],
+                      config['nick_name'],
                       config['ticket_num'], config['damai_url'], config['target_url'], config['driver_path'])
         con.enter_damai_homepage()  # 进入到具体抢购页面
     except Exception as e:
@@ -319,5 +319,5 @@ if __name__ == '__main__':
 
         if con.status == 6:
             print(u"###经过%d轮奋斗，共耗时%.1f秒，抢票成功！请确认订单信息###" % (
-            con.num, round(con.time_end - con.time_start, 3)))
+                con.num, round(con.time_end - con.time_start, 3)))
             break
