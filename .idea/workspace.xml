@@ -4,11 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3bbc8642-00de-4070-9245-7d003f985307" name="Changes" comment="自动输入账号密码">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config.json" beforeDir="false" afterPath="$PROJECT_DIR$/config.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/damai_ticket.py" beforeDir="false" afterPath="$PROJECT_DIR$/damai_ticket.py" afterDir="false" />
-    </list>
+    <list default="true" id="3bbc8642-00de-4070-9245-7d003f985307" name="Changes" comment="webdriver 更改为相对路径" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -94,14 +90,22 @@
       <option name="project" value="LOCAL" />
       <updated>1685635063009</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="webdriver 更改为相对路径">
+      <created>1685762669713</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1685762669713</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="转换chrome到edge" />
     <MESSAGE value="添加账号密码" />
     <MESSAGE value="自动输入账号密码" />
-    <option name="LAST_COMMIT_MESSAGE" value="自动输入账号密码" />
+    <MESSAGE value="webdriver 更改为相对路径" />
+    <option name="LAST_COMMIT_MESSAGE" value="webdriver 更改为相对路径" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
