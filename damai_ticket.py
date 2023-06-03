@@ -14,7 +14,7 @@ from selenium.webdriver.edge.service import Service
 
 class Concert(object):
     def __init__(self, date, session, price, need_real_name, real_name, nick_name, ticket_num, damai_url, target_url,
-                 driver_path, username, password):
+                 driver_path):
         self.date = date  # 日期序号
         self.session = session  # 场次序号优先级
         self.price = price  # 票价序号优先级
@@ -29,8 +29,6 @@ class Concert(object):
         self.target_url = target_url  # 目标购票网址
         self.driver_path = driver_path  # 浏览器驱动地址
         self.driver = None
-        self.account_username = username
-        self.account_pass = password
 
     def isClassPresent(self, item, name, ret=False):
         try:
@@ -44,16 +42,11 @@ class Concert(object):
 
     # 获取账号的cookie信息
     def get_cookie(self):
-        self.driver.get(self.damai_url)
-
-        print(u"###请点击登录###")
-        self.driver.find_element(By.XPATH, '//span[@class="span-box-header span-user" and @data-spm="dlogin"]').click()
-
-        print(u"###请输入密码登录###")
-
-        self.enter_password_login()
+        self.scan_square_code_login()
         dump(self.driver.get_cookies(), open("cookies.pkl", "wb"))
         print(u"###Cookie保存成功###")
+        print(u'###成功获取Cookie，重启浏览器###')
+        self.driver.quit()
 
     def set_cookie(self):
         try:
@@ -89,20 +82,17 @@ class Concert(object):
             # 创建Edge浏览器实例
             self.driver = webdriver.Edge(service=edge_service, options=edge_options)
             self.get_cookie()
-            print(u'###成功获取Cookie，重启浏览器###')
-            self.driver.quit()
 
-        options = webdriver.EdgeOptions()
         # 禁止图片、js、css加载
         prefs = {"profile.managed_default_content_settings.images": 2,
                  "profile.managed_default_content_settings.javascript": 1,
                  'permissions.default.stylesheet': 2}
-        options.add_experimental_option("prefs", prefs)
-        options.add_argument("--disable-blink-features=AutomationControlled")
+        edge_options.add_experimental_option("prefs", prefs)
+        edge_options.add_argument("--disable-blink-features=AutomationControlled")
         # 更换等待策略为不等待浏览器加载完全就进行下一步操作
         capa = DesiredCapabilities.EDGE
         capa["pageLoadStrategy"] = "none"
-        self.driver = webdriver.Edge(executable_path=self.driver_path, options=options, capabilities=capa)
+        self.driver = webdriver.Edge(service=edge_service, options=edge_options, capabilities=capa)
         # 登录到具体抢购页面
         self.login()
         self.driver.refresh()
@@ -113,7 +103,8 @@ class Concert(object):
             self.status = 1
             print(u"###登录成功###")
             self.time_start = time()
-        except:
+        except e:
+            print("登录失败", e)
             self.status = 0
             self.driver.quit()
             raise Exception(u"***错误：登录失败,请删除cookie后重试***")
@@ -298,24 +289,31 @@ class Concert(object):
             print(u'###成功提交订单,请手动支付###')
             self.time_end = time()
 
-    def enter_password_login(self):
+    def scan_square_code_login(self):
+        print(u"###打开大麦官网###")
+        self.driver.get(self.damai_url)
+
+        print(u"###请点击登录###")
+        self.driver.find_element(By.XPATH, '//span[@class="span-box-header span-user" and @data-spm="dlogin"]').click()
+        # 等待页面加载完成（根据实际情况调整等待时间）
         driver = self.driver
+        driver.implicitly_wait(10)
+
+        # 切换到iframe上下文
         iframe = driver.find_element(By.ID, 'alibaba-login-box')
         driver.switch_to.frame(iframe)
 
-        # 等待登录页面加载完成
+        # 等待扫码登录的tab可见
         wait = WebDriverWait(driver, 10)
-        username_input = wait.until(EC.presence_of_element_located((By.NAME, 'fm-login-id')))
-        password_input = wait.until(EC.presence_of_element_located((By.NAME, 'fm-login-password')))
+        scan_qrcode_tab = wait.until(
+            EC.visibility_of_element_located((By.XPATH, "//div[@class='login-tabs-tab' and text()='扫码登录']")))
+        scan_qrcode_tab.click()
 
-        # 输入账号和密码
-        username_input.send_keys(self.account_username)
-        password_input.send_keys(self.account_pass)
+        # 等待10秒钟
+        sleep(10)
 
-        # 查找并点击提交按钮
-        submit_button = wait.until(EC.element_to_be_clickable((By.ID, 'submit-button')))
-        submit_button.click()
-
+        # 切换回默认的上下文
+        driver.switch_to.default_content()
 
 if __name__ == '__main__':
     try:
@@ -324,7 +322,7 @@ if __name__ == '__main__':
             # params: 场次优先级，票价优先级，实名者序号, 用户昵称， 购买票数， 官网网址， 目标网址, 浏览器驱动地址
         con = Concert(config['date'], config['sess'], config['price'], config['need_real_name'], config['real_name'],
                       config['nick_name'], config['ticket_num'], config['damai_url'], config['target_url'],
-                      config['driver_path'], config['account_username'], config['account_pass'])
+                      config['driver_path'])
         con.enter_damai_homepage()  # 进入到具体抢购页面
     except Exception as e:
         print(e)

@@ -4,11 +4,9 @@
     "price": [0],
     "need_real_name": true,
     "real_name": [1],
-    "nick_name": "颜伟凡",
+    "nick_name": "luz9510",
     "ticket_num": 1,
     "driver_path": "chromedriver.exe",
     "damai_url": "https://www.damai.cn/",
-    "target_url": "https://detail.damai.cn/item.htm?spm=a2oeg.search_category.searchtxt.ditem_1.29424d15Pa0l4U&id=711426132713",
-    "account_username": "",
-    "account_pass": ""
+    "target_url": "https://detail.damai.cn/item.htm?spm=a2oeg.search_category.searchtxt.ditem_1.29424d15Pa0l4U&id=711426132713"
 }
