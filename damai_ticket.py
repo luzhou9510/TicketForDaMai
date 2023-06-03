@@ -48,12 +48,8 @@ class Concert(object):
 
         print(u"###请点击登录###")
         self.driver.find_element(By.XPATH, '//span[@class="span-box-header span-user" and @data-spm="dlogin"]').click()
-        while self.driver.title.find('大麦网-全球演出赛事官方购票平台') != -1:  # 等待网页加载完成
-            sleep(1)
 
         print(u"###请输入密码登录###")
-        while self.driver.title != '大麦登录':
-            sleep(1)
 
         self.enter_password_login()
         dump(self.driver.get_cookies(), open("cookies.pkl", "wb"))
@@ -319,6 +315,7 @@ class Concert(object):
         # 查找并点击提交按钮
         submit_button = wait.until(EC.element_to_be_clickable((By.ID, 'submit-button')))
         submit_button.click()
+
 
 if __name__ == '__main__':
     try:
